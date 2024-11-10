@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const Dashboard = ({ user }) => {
   return (
@@ -22,5 +23,12 @@ const PatientDashboard = () => (
     <p>Here, you can book appointments and access your medical records.</p>
   </div>
 );
+
+Dashboard.propTypes = {
+  user: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    role: PropTypes.string.isRequired,
+  }).isRequired,
+};
 
 export default Dashboard;
