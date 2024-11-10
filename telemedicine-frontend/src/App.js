@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Login from './Login';
-import Signup from './Signup';
-import Dashboard from './Dashboard';
-import AppointmentBooking from '../components/AppointmentBooking';
-import VideoCall from '../components/VideoCall';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import AppointmentBooking from './components/AppointmentBooking';
+import VideoCall from './components/VideoCall';
 
 function App() {
   return (
