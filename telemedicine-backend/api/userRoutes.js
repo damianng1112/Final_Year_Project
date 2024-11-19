@@ -1,5 +1,5 @@
 const express = require('express');
-const bcrypt = require('bcrypt'); 
+const bcrypt = require('bcryptjs'); 
 const router = express.Router();
 const User = require('../models/User');
 
@@ -19,7 +19,7 @@ router.post('/signup', async (req, res) => {
 
     // Generate a salt and hash the password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hashSync(password, salt);
 
     // Create a new user with the hashed password and role
     const user = new User({ name, email, password: hashedPassword, role, doctorId });

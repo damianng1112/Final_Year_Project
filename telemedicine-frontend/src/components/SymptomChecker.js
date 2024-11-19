@@ -17,7 +17,8 @@ const SymptomChecker = () => {
     useEffect(() => {
         const fetchSymptoms = async () => {
             try {
-                const response = await axios.get("http://127.0.0.1:5001/symptoms");
+                // const response = await axios.get("http://api:5001/symptoms");
+                const response = await axios.get(`${process.env.REACT_APP_PY_API_URL}/symptoms`);
                 setAllSymptoms(response.data.symptoms);
                 setFilteredSymptoms(response.data.symptoms);
             } catch (err) {
@@ -60,7 +61,8 @@ const SymptomChecker = () => {
 
         try {
             setError("");
-            const response = await axios.post("http://127.0.0.1:5001/predict", {
+            // const response = await axios.get("http://api:5001/predict", {
+            const response = await axios.post(`${process.env.REACT_APP_PY_API_URL}/predict`, {
                 symptoms: symptoms
             });
 

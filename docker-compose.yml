@@ -1,0 +1,42 @@
+services:
+  frontend:
+    build:
+      context: ./telemedicine-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_PY_API_URL=http://api:5001 
+    depends_on:
+      - api
+    networks:
+      - app-network
+    volumes:
+      - ./telemedicine-frontend:/app
+    restart: always
+
+  backend:
+    build:
+      context: ./telemedicine-backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./telemedicine-backend:/app
+    restart: always
+    depends_on:
+      - api # Ensures the Flask API is ready before the Node.js backend starts
+
+  api:
+    build:
+      context: ./telemedicine-backend/api
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001" 
+    volumes:
+      - ./telemedicine-backend/api:/app
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge
