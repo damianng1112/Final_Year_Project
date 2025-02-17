@@ -13,10 +13,11 @@ const Login = () => {
     e.preventDefault();
     setError(null);
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/login`, { email, password });
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/users/login`, { email, password });
 
-      // Save user ID to local storage for fetching user info later
+      // Save user ID and token
       localStorage.setItem('userId', response.data.user._id);
+      localStorage.setItem('token', response.data.token);
 
       // Navigate to the dashboard
       navigate('/dashboard');

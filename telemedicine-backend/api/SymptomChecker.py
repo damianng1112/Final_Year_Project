@@ -27,15 +27,23 @@ def predict():
         # Validate input
         if not isinstance(symptoms, list) or not symptoms:
             return jsonify({"error": "Invalid symptoms data. Provide a list of symptoms."}), 400
+        
+         # Map symptoms to weights using severity
+        psymptoms = []
+        for symptom in symptoms:
+            if symptom in severity:
+                psymptoms.append(severity[symptom])  # Replace symptom with its weight
+            else:
+                psymptoms.append(0)  # Default to 0 if symptom is unknown
 
-        # Update input features with user's symptoms, defaulting to 0 for missing ones
-        symptom_weights = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        for i, feature in enumerate(all_symptoms):
-            if feature in symptoms:
-                symptom_weights[i] = severity.get(feature, 0)
+        nulls = [0] * (17 - len(psymptoms))
+        input_features = psymptoms + nulls
+
+        # Ensure the input is exactly 17 features
+        input_features = input_features[:17]
 
         # Convert to model input
-        input_features = np.array(symptom_weights).reshape(1, -1)
+        input_features = np.array(input_features).reshape(1, -1)
 
         # Debugging: Print input shape and contents
         print("Input Features Shape:", input_features.shape)

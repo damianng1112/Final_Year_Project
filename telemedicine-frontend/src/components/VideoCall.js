@@ -1,59 +1,83 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Peer from 'simple-peer';
 import io from 'socket.io-client';
 
 const socket = io.connect(process.env.REACT_APP_SOCKET_URL);
 
-const VideoCall = () => {
+const VideoCall = ({ roomId }) => {
   const [stream, setStream] = useState(null);
-  const [callAccepted, setCallAccepted] = useState(false);
-  const [callInitiated, setCallInitiated] = useState(false);
-  const [peer, setPeer] = useState(null);
-  const [loading, setLoading] = useState(false);
-
+  const [callActive, setCallActive] = useState(false);
+  const [peers, setPeers] = useState([]);
   const userVideo = useRef();
-  const partnerVideo = useRef();
+  const peersRef = useRef([]);
 
-  const startCall = () => {
-    setLoading(true);
+  useEffect(() => {
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then((stream) => {
+      .then(stream => {
         setStream(stream);
-        if (userVideo.current) {
-          userVideo.current.srcObject = stream;
-        }
-
-        const p = new Peer({ initiator: true, trickle: false, stream });
-        setPeer(p);
-
-        p.on('signal', (data) => {
-          socket.emit('signal', data);
+        userVideo.current.srcObject = stream;
+        
+        socket.emit('join-room', roomId);
+        
+        socket.on('user-connected', userId => {
+          const peer = createPeer(userId, socket.id, stream);
+          peersRef.current.push({
+            peerID: userId,
+            peer,
+          });
+          setPeers(users => [...users, { id: userId }]);
         });
 
-        p.on('stream', (partnerStream) => {
-          if (partnerVideo.current) {
-            partnerVideo.current.srcObject = partnerStream;
-          }
+        socket.on('user-disconnected', userId => {
+          const peerObj = peersRef.current.find(p => p.peerID === userId);
+          if (peerObj) peerObj.peer.destroy();
+          setPeers(peers => peers.filter(peer => peer.id !== userId));
         });
 
-        setCallInitiated(true);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error accessing media devices.', error);
-        setLoading(false);
+        socket.on('signal', payload => {
+          const item = peersRef.current.find(p => p.peerID === payload.id);
+          if (item) item.peer.signal(payload.signal);
+        });
       });
+
+    return () => {
+      socket.disconnect();
+      if (stream) stream.getTracks().forEach(track => track.stop());
+    };
+  }, [roomId]);
+
+  const createPeer = (userID, callerID, stream) => {
+    const peer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream,
+    });
+
+    peer.on('signal', signal => {
+      socket.emit('signal', { userID: userID, callerID, signal });
+    });
+
+    peer.on('stream', stream => {
+      // Handle remote stream
+    });
+
+    return peer;
   };
 
   return (
-    <div>
-      <h2>Video Call</h2>
-      {loading && <p>Loading...</p>}
-      <button onClick={startCall} aria-label="Start video call">Start Call</button>
-      <div>
-        <video ref={userVideo} autoPlay playsInline muted />
-        {callAccepted && <video ref={partnerVideo} autoPlay playsInline />}
+    <div className="video-call-container">
+      <div className="video-grid">
+        <video ref={userVideo} autoPlay playsInline muted className="local-video" />
+        {peers.map(peer => (
+          <video key={peer.id} autoPlay playsInline className="remote-video" />
+        ))}
       </div>
+      <button
+        onClick={() => setCallActive(!callActive)}
+        className={`call-button ${callActive ? 'end-call' : 'start-call'}`}
+      >
+        {callActive ? 'End Call' : 'Start Call'}
+      </button>
     </div>
   );
 };

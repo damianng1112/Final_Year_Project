@@ -4,7 +4,7 @@ services:
       context: ./telemedicine-frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:80"
     environment:
       - REACT_APP_PY_API_URL=http://api:5001 
     depends_on:
@@ -33,6 +33,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5001:5001" 
+    networks:
+      - app-network
     volumes:
       - ./telemedicine-backend/api:/app
     restart: always

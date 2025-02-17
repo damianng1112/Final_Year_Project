@@ -1,4 +1,5 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); 
 const router = express.Router();
 const User = require('../models/User');
@@ -48,8 +49,15 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
+    // Create JWT Token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
     // Respond with user information
-    res.json({ message: "Login successful", user: { _id: user._id, name: user.name, role: user.role } });
+    res.json({ message: "Login successful", token, user: { _id: user._id, name: user.name, role: user.role } });
   } catch (error) {
     res.status(500).json({ message: "Error logging in" });
   }
@@ -67,6 +75,62 @@ router.get('/user/:id', async (req, res) => {
   } catch (error) {
     console.error("Error fetching user:", error);
     res.status(500).json({ message: 'Error retrieving user information' });
+  }
+});
+
+// Get all doctors
+router.get('/doctors', async (req, res) => {
+  try {
+    const doctors = await User.find({ role: 'doctor' });
+    res.json(doctors);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching doctors' });
+  }
+});
+
+router.post("/set-availability", async (req, res) => {
+  try {
+    const { doctorId, date, startTime, endTime, slotDuration } = req.body;
+
+    // Validate doctor
+    const doctor = await User.findById(doctorId);
+    if (!doctor || doctor.role !== "doctor") {
+      return res.status(400).json({ message: "Invalid doctor ID" });
+    }
+
+    // Convert date to ISO format for consistency
+    const formattedDate = new Date(date).toISOString().split("T")[0];
+
+    // Generate time slots
+    const slots = generateTimeSlots(startTime, endTime, slotDuration);
+
+    // Check if availability already exists for that date
+    const existingAvailability = doctor.availability.find(
+      (a) => a.date.toISOString().split("T")[0] === formattedDate
+    );
+
+    if (existingAvailability) {
+      // Update existing availability
+      existingAvailability.startTime = startTime;
+      existingAvailability.endTime = endTime;
+      existingAvailability.slotDuration = slotDuration;
+      existingAvailability.slots = slots;
+    } else {
+      // Add new availability entry
+      doctor.availability.push({
+        date: new Date(date),
+        startTime,
+        endTime,
+        slotDuration,
+        slots,
+      });
+    }
+
+    await doctor.save();
+    res.json({ message: "Availability set successfully", availability: doctor.availability });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error setting availability" });
   }
 });
 

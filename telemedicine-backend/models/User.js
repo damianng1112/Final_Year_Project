@@ -1,4 +1,11 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+
+const availabilitySchema = new mongoose.Schema({
+  date: { type: Date, required: true },
+  startTime: { type: String, required: true }, 
+  endTime: { type: String, required: true },
+  slotDuration: { type: Number, default: 30 }, 
+});
 
 const UserSchema = new mongoose.Schema({
   name: String,
@@ -6,10 +13,10 @@ const UserSchema = new mongoose.Schema({
   password: String,
   role: {
     type: String,
-    enum: ['patient', 'doctor'],
-    default: 'patient',
+    enum: ["patient", "doctor"],
+    default: "patient",
   },
-  doctorId: String,
+  availability: [availabilitySchema], // Doctor's availability
 });
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model("User", UserSchema);

@@ -16,11 +16,12 @@ COPY . .
 # Build the React application
 RUN npm run build
 
-# Install serve to serve the static files
-RUN npm install -g serve
+# Serve the build with Nginx
+FROM nginx:alpine
+COPY --from=0 /app/build /usr/share/nginx/html
 
 # Expose the port the app runs on
-EXPOSE 3000
+EXPOSE 80
 
 # Command to run the app
-CMD ["npm", "start"]
+CMD ["nginx", "-g", "daemon off;"]
