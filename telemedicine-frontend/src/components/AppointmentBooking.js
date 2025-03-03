@@ -52,7 +52,7 @@ const AppointmentBooking = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/appointments/availability/${selectedDoctor}?date=${date}`
+          `${process.env.REACT_APP_API_URL}/api/availability/${selectedDoctor}?date=${date}`
         );
 
         const { availableSlots, bookedSlots } = response.data;

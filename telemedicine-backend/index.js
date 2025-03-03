@@ -3,12 +3,13 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const Message = require('./models/Message');
 require('dotenv').config();
 
-const userRoutes = require('./api/userRoutes');
-const appointmentRoutes = require('./api/appointmentRoutes');
-const doctorRoutes = require('./api/doctorRoutes'); // New route file
-const messageRoutes = require('./api/messageRoutes'); // New route file
+const userRoutes = require('./api/routes/userRoutes');
+const appointmentRoutes = require('./api/routes/appointmentRoutes');
+const messageRoutes = require('./api/routes/messageRoutes');
+const availabilityRoutes = require('./api/routes/availabilityRoutes');
 const authMiddleware = require('./middleware/auth'); // Authentication middleware
 
 const app = express();
@@ -51,8 +52,12 @@ io.on('connection', (socket) => {
   });
 
   // Handle chat messages
-  socket.on('send-message', (messageData) => {
-    socket.to(messageData.appointmentId).emit('receive-message', messageData);
+  socket.on('send-message', async (messageData) => {
+    try {
+      socket.to(messageData.appointmentId).emit('receive-message', messageData);
+    } catch (error) {
+      console.error('Error sending message via socket:', error);
+    }
   });
 
   socket.on('disconnect', () => {
@@ -60,11 +65,10 @@ io.on('connection', (socket) => {
   });
 });
 
-// Apply authentication middleware to protected routes
 app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
-app.use('/api/doctors', doctorRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/availability', availabilityRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

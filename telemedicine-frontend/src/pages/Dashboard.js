@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { FaUserCircle } from 'react-icons/fa'; 
 import '../style/App.css';
 import SymptomChecker from '../components/SymptomChecker';
 
@@ -24,14 +25,6 @@ const Dashboard = () => {
         // Fetch user data
         const userResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/user/${userId}`);
         setUser(userResponse.data);
-
-        // Fetch appointments if patient
-        // if (userResponse.data.role === 'patient') {
-        //   const appointmentsResponse = await axios.get(
-        //     `${process.env.REACT_APP_API_URL}/api/appointments/book-appointment`
-        //   );
-        //   setAppointments(appointmentsResponse.data);
-        // }
       } catch (err) {
         handleFetchError(err);
       } finally {
@@ -41,6 +34,20 @@ const Dashboard = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!user) return;
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/appointments/${user._id}`);
+        setAppointments(response.data);
+      } catch (err) {
+        console.error("Error fetching appointments:", err);
+      }
+    };
+
+    fetchAppointments();
+  }, [user]);
 
   const handleFetchError = (err) => {
     if (err.response) {
@@ -73,12 +80,20 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="max-w-4xl mx-auto p-6 space-y-4 bg-white shadow-lg rounded-lg">
+      {/* Navigation Bar */}
+      <div className="bg-white shadow py-4 px-6 flex justify-between items-center">
+        <h1 className="text-xl font-bold">Dashboard</h1>
+        <Link to="/profile" className="text-blue-600 hover:text-blue-800">
+          <FaUserCircle size={32} />
+        </Link>
+      </div>
+
+      <div className="max-w-4xl mx-auto p-6 space-y-4 bg-white shadow-lg rounded-lg mt-6">
         <h1 className="text-2xl font-bold text-gray-800">Welcome, {user.name}!</h1>
         <p className="text-gray-700">Role: {user.role}</p>
         
         {user.role === 'doctor' ? (
-          <DoctorDashboard user={user} />
+          <DoctorDashboard user={user} appointments={appointments} />
         ) : (
           <PatientDashboard user={user} appointments={appointments} />
         )}
@@ -87,42 +102,31 @@ const Dashboard = () => {
   );
 };
 
-const DoctorDashboard = ({ user }) => {
-  const [doctorAppointments, setDoctorAppointments] = useState([]);
-
-  useEffect(() => {
-    const fetchDoctorAppointments = async () => {
-      try {
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/doctor-appointments/${user._id}`
-        );
-        setDoctorAppointments(response.data);
-      } catch (err) {
-        console.error("Error fetching doctor appointments:", err);
-      }
-    };
-
-    fetchDoctorAppointments();
-  }, [user._id]);
-
+const DoctorDashboard = ({ user, appointments }) => {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-gray-800">Doctor's Dashboard</h2>
       <div className="mb-4">
         <h3 className="text-lg font-medium mb-2">Upcoming Appointments</h3>
-        {doctorAppointments.length > 0 ? (
+        {appointments.length > 0 ? (
           <div className="space-y-2">
-            {doctorAppointments.map(appointment => (
+            {appointments.map(appointment => (
               <div key={appointment._id} className="p-3 bg-gray-50 rounded-lg">
                 <p>Patient: {appointment.patient.name}</p>
                 <p>Date: {new Date(appointment.date).toLocaleDateString()}</p>
                 <p>Time: {appointment.time}</p>
-                <Link 
-                  to={`/video-call/${appointment._id}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  Start Video Call
-                </Link>
+                <Link
+                      to={`/chat/${appointment._id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Message Patient
+                    </Link>
+                    <Link
+                      to={`/video-call/${appointment._id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Start Video Call
+                    </Link>
               </div>
             ))}
           </div>

@@ -2,11 +2,11 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); 
 const router = express.Router();
-const User = require('../models/User');
+const User = require('../../models/User');
 
 // Signup route
 router.post('/signup', async (req, res) => {
-  const { name, email, password, role, doctorId } = req.body; // Include role and doctorId
+  const { name, email, password, role, doctorId, availability } = req.body;
   try {
     // Validate required fields
     if (!name || !email || !password || !role) {
@@ -14,16 +14,21 @@ router.post('/signup', async (req, res) => {
     }
 
     // Check for doctor-specific validation
-    if (role === 'doctor' && !doctorId) {
-      return res.status(400).json({ message: 'Doctor ID is required for doctor role.' });
+    if (role === "doctor" && !doctorId) {
+      return res.status(400).json({ message: "Doctor ID is required." });
     }
 
     // Generate a salt and hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hashSync(password, salt);
 
-    // Create a new user with the hashed password and role
-    const user = new User({ name, email, password: hashedPassword, role, doctorId });
+    let user = new User({ name, email, password: hashedPassword, role });
+
+    if (role === "doctor") {
+      user.doctorId = doctorId;
+      user.availability = availability || [];  // Assign availability directly
+    }
+
     await user.save();
 
     res.json({ message: "User registered successfully" });
@@ -78,59 +83,56 @@ router.get('/user/:id', async (req, res) => {
   }
 });
 
+// GET all patients
+router.get("/patients", async (req, res) => {
+  try {
+    const patients = await User.find({ role: 'patient'}).select('-password');
+    res.json(patients);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching users" });
+  }
+});
+
 // Get all doctors
 router.get('/doctors', async (req, res) => {
   try {
-    const doctors = await User.find({ role: 'doctor' });
+    const doctors = await User.find({ role: 'doctor' }).select('-password');
     res.json(doctors);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching doctors' });
   }
 });
 
-router.post("/set-availability", async (req, res) => {
+// GET all user
+router.get("/user", async (req, res) => {
   try {
-    const { doctorId, date, startTime, endTime, slotDuration } = req.body;
-
-    // Validate doctor
-    const doctor = await User.findById(doctorId);
-    if (!doctor || doctor.role !== "doctor") {
-      return res.status(400).json({ message: "Invalid doctor ID" });
-    }
-
-    // Convert date to ISO format for consistency
-    const formattedDate = new Date(date).toISOString().split("T")[0];
-
-    // Generate time slots
-    const slots = generateTimeSlots(startTime, endTime, slotDuration);
-
-    // Check if availability already exists for that date
-    const existingAvailability = doctor.availability.find(
-      (a) => a.date.toISOString().split("T")[0] === formattedDate
-    );
-
-    if (existingAvailability) {
-      // Update existing availability
-      existingAvailability.startTime = startTime;
-      existingAvailability.endTime = endTime;
-      existingAvailability.slotDuration = slotDuration;
-      existingAvailability.slots = slots;
-    } else {
-      // Add new availability entry
-      doctor.availability.push({
-        date: new Date(date),
-        startTime,
-        endTime,
-        slotDuration,
-        slots,
-      });
-    }
-
-    await doctor.save();
-    res.json({ message: "Availability set successfully", availability: doctor.availability });
+    const user = await User.find().select('-password');
+    res.json(user);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error setting availability" });
+    res.status(500).json({ message: "Error fetching users" });
+  }
+});
+
+// UPDATE a user 
+router.put("/user/:id", async (req, res) => {
+  try {
+    const updates = req.body; 
+    const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User updated", user });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating user" });
+  }
+});
+
+// DELETE a user
+router.delete("/user/:id", async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Error deleting user" });
   }
 });
 
