@@ -9,6 +9,7 @@ const VideoCall = ({ roomId }) => {
   const [callActive, setCallActive] = useState(false);
   const [peers, setPeers] = useState([]);
   const userVideo = useRef();
+  const remoteVideoRefs = useRef({});
   const peersRef = useRef([]);
 
   useEffect(() => {
@@ -18,26 +19,12 @@ const VideoCall = ({ roomId }) => {
         userVideo.current.srcObject = stream;
         
         socket.emit('join-room', roomId);
-        
-        socket.on('user-connected', userId => {
-          const peer = createPeer(userId, socket.id, stream);
-          peersRef.current.push({
-            peerID: userId,
-            peer,
-          });
-          setPeers(users => [...users, { id: userId }]);
-        });
 
-        socket.on('user-disconnected', userId => {
-          const peerObj = peersRef.current.find(p => p.peerID === userId);
-          if (peerObj) peerObj.peer.destroy();
-          setPeers(peers => peers.filter(peer => peer.id !== userId));
-        });
+        socket.on('user-connected', userId => handleUserConnected(userId, stream));
 
-        socket.on('signal', payload => {
-          const item = peersRef.current.find(p => p.peerID === payload.id);
-          if (item) item.peer.signal(payload.signal);
-        });
+        socket.on('user-disconnected', handleUserDisconnected);
+
+        socket.on('signal', handleSignal);
       });
 
     return () => {
@@ -46,19 +33,38 @@ const VideoCall = ({ roomId }) => {
     };
   }, [roomId]);
 
+  const handleUserConnected = (userId, stream) => {
+    const peer = createPeer(userId, socket.id, stream);
+    peersRef.current.push({ peerID: userId, peer });
+    setPeers(users => [...users, { id: userId, peer }]);
+  };
+
+  const handleUserDisconnected = (userId) => {
+    const peerObj = peersRef.current.find(p => p.peerID === userId);
+    if (peerObj) peerObj.peer.destroy();
+
+    peersRef.current = peersRef.current.filter(p => p.peerID !== userId);
+    setPeers(peers => peers.filter(peer => peer.id !== userId));
+  };
+
+  const handleSignal = (payload) => {
+    const item = peersRef.current.find(p => p.peerID === payload.id);
+    if (item) item.peer.signal(payload.signal);
+  };
+
   const createPeer = (userID, callerID, stream) => {
     const peer = new Peer({
-      initiator: true,
+      initiator: callerID === socket.id,
       trickle: false,
       stream,
     });
 
     peer.on('signal', signal => {
-      socket.emit('signal', { userID: userID, callerID, signal });
+      socket.emit('signal', { userID, callerID, signal });
     });
 
-    peer.on('stream', stream => {
-      // Handle remote stream
+    peer.on('stream', remoteStream => {
+      remoteVideoRefs.current[userID].srcObject = remoteStream;
     });
 
     return peer;
@@ -69,7 +75,13 @@ const VideoCall = ({ roomId }) => {
       <div className="video-grid">
         <video ref={userVideo} autoPlay playsInline muted className="local-video" />
         {peers.map(peer => (
-          <video key={peer.id} autoPlay playsInline className="remote-video" />
+          <video
+            key={peer.id}
+            ref={ref => (remoteVideoRefs.current[peer.id] = ref)}
+            autoPlay
+            playsInline
+            className="remote-video"
+          />
         ))}
       </div>
       <button

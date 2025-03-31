@@ -3,14 +3,16 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
-const Message = require('./models/Message');
 require('dotenv').config();
 
 const userRoutes = require('./api/routes/userRoutes');
 const appointmentRoutes = require('./api/routes/appointmentRoutes');
 const messageRoutes = require('./api/routes/messageRoutes');
 const availabilityRoutes = require('./api/routes/availabilityRoutes');
-const authMiddleware = require('./middleware/auth'); // Authentication middleware
+const authMiddleware = require('./middleware/auth'); 
+const videoCallHandler = require('./sockets/videoCallHandler');
+const chatHandler = require('./sockets/chatHandler');
+//const triageRoutes = require("./api/routes/triageRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -22,6 +24,10 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+
+// Use socket handlers for WebSocket events
+videoCallHandler(io);
+chatHandler(io); 
 
 // Enhanced MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
@@ -41,34 +47,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Socket.io connection handler
-io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
-
-  // Handle video call signaling
-  socket.on('join-room', (roomId) => {
-    socket.join(roomId);
-    socket.to(roomId).emit('user-connected', socket.id);
-  });
-
-  // Handle chat messages
-  socket.on('send-message', async (messageData) => {
-    try {
-      socket.to(messageData.appointmentId).emit('receive-message', messageData);
-    } catch (error) {
-      console.error('Error sending message via socket:', error);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
-});
-
+// API Routes
 app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/availability', availabilityRoutes);
+//app.use("/api/triage", triageRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

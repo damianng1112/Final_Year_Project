@@ -8,6 +8,8 @@ import Chat from "../components/Chat";
 import VideoCall from '../components/VideoCall';
 import ProfilePage from '../components/profile/profilePage';
 import Logout from '../components/profile/logout';
+//import TriageAssessment from '../components/Triage';
+//          <Route path="/triage" element={<TriageAssessment onBookAppointment={() => navigate('/book-appointment')} />} />
 
 function App() {
   return (
@@ -20,6 +22,7 @@ function App() {
           <Route path="/book-appointment" element={<AppointmentBooking />} />
           <Route path="/video-call" element={<VideoCall />} />
           <Route path="/chat/:appointmentId" element={<ChatWrapper />} />
+          <Route path="/video-call/:appointmentId" element={<VideoCallWrapper />} />
           <Route path="/profile" element={<ProfilePage />} />`
           <Route path="/logout" element={<Logout />} />
         </Routes>
@@ -32,6 +35,12 @@ function App() {
 const ChatWrapper = () => {
   const { appointmentId } = useParams();
   return <Chat appointmentId={appointmentId} />;
+};
+
+// Wrapper to pass the appointmentId from URL to Video Call component
+const VideoCallWrapper = () => {
+  const { appointmentId } = useParams();
+  return <VideoCall appointmentId={appointmentId} />;
 };
 
 export default App;
