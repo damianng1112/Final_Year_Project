@@ -12,7 +12,7 @@ const availabilityRoutes = require('./api/routes/availabilityRoutes');
 const authMiddleware = require('./middleware/auth'); 
 const videoCallHandler = require('./sockets/videoCallHandler');
 const chatHandler = require('./sockets/chatHandler');
-//const triageRoutes = require("./api/routes/triageRoutes");
+const triageRoutes = require("./api/routes/triageRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -52,7 +52,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/availability', availabilityRoutes);
-//app.use("/api/triage", triageRoutes);
+app.use("/api/triage", triageRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const TriageAssessment = () => {
   const [symptoms, setSymptoms] = useState("");
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [bookingAvailable, setBookingAvailable] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,7 +15,7 @@ const TriageAssessment = () => {
     setBookingAvailable(false);
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/triage`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/triage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symptoms }),
@@ -63,12 +65,12 @@ const TriageAssessment = () => {
                 <div className="mt-4">
                   <p className="font-semibold text-gray-700">Would you like to book an appointment?</p>
                   <div className="flex gap-4 mt-2">
-                    <a
-                      href="/appointments"
+                    <button
+                      onClick={() => navigate('/book-appointment')}
                       className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition"
                     >
                       Yes, Book Now
-                    </a>
+                    </button>
                     <button
                       onClick={() => setBookingAvailable(false)}
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition"

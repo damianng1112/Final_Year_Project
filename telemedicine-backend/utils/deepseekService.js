@@ -2,15 +2,21 @@ const axios = require("axios");
 
 const deepSeekQuery = async (prompt) => {
   try {
-    const response = await axios.post("http://localhost:8000/v1/chat/completions", {
-      model: "deepseek-llm",
-      messages: [{ role: "system", content: "You are a helpful AI medical assistant." }, { role: "user", content: prompt }],
+    const response = await axios.post("http://localhost:11434/api/generate", {
+      model: "deepseek-r1:1.5b", // Using the DeepSeek model
+      prompt: prompt,
+      stream: false
     });
 
-    return response.data.choices[0].message.content;
+    // Ollama returns the response in a different format
+    return response.data.response;
   } catch (error) {
-    console.error("DeepSeek API error:", error);
-    throw new Error("Failed to communicate with LLM.");
+    console.error("Ollama API error:", error.response?.data || error.message);
+    throw new Error("Failed to communicate with local LLM. " + 
+      (error.message.includes("ECONNREFUSED") ? 
+        "Make sure Ollama is running on your machine." : 
+        error.message)
+    );
   }
 };
 
