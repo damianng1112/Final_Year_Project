@@ -29,14 +29,14 @@ services:
 
   api:
     build:
-      context: ./telemedicine-backend/api
+      context: ./telemedicine-backend/api/ml_model
       dockerfile: Dockerfile
     ports:
       - "5001:5001" 
     networks:
       - app-network
     volumes:
-      - ./telemedicine-backend/api:/app
+      - ./telemedicine-backend/api/ml_model:/app
     restart: always
 
 networks:

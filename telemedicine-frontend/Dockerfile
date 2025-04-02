@@ -1,5 +1,5 @@
 # Use the official Node.js image as a base image
-FROM node:20
+FROM node:20 as build
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -16,9 +16,10 @@ COPY . .
 # Build the React application
 RUN npm run build
 
-# Serve the build with Nginx
+# Production stage
 FROM nginx:alpine
-COPY --from=0 /app/build /usr/share/nginx/html
+COPY --from=build /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose the port the app runs on
 EXPOSE 80

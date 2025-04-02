@@ -8,6 +8,8 @@ RUN npm install
 
 COPY . .
 
+VOLUME ["/app/data"]
+
 EXPOSE 5000
 
 CMD [ "node", "index.js" ]

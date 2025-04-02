@@ -8,8 +8,13 @@ const deepSeekQuery = async (prompt) => {
       stream: false
     });
 
-    // Ollama returns the response in a different format
-    return response.data.response;
+    let result = response.data.response;
+    
+    result = result.replace(/<think>[\s\S]*?<\/think>/g, '');
+    
+    result = result.replace(/\s+/g, ' ').trim();
+    
+    return result;
   } catch (error) {
     console.error("Ollama API error:", error.response?.data || error.message);
     throw new Error("Failed to communicate with local LLM. " + 
