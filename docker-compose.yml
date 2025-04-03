@@ -23,6 +23,8 @@ services:
       - "5000:5000"
     volumes:
       - ./telemedicine-backend:/app
+    networks:
+      - app-network
     restart: always
     depends_on:
       - api # Ensures the Flask API is ready before the Node.js backend starts
@@ -38,6 +40,20 @@ services:
     volumes:
       - ./telemedicine-backend/api/ml_model:/app
     restart: always
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: always
+    networks:
+      - app-network
+
+
+volumes:
+  ollama_data:
 
 networks:
   app-network:

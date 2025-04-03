@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { deepSeekQuery } = require("../../utils/deepseekService");
 
-// Triage route - process symptoms & return an assessment
+// Improved triage route with better prompt and result extraction
 router.post("/", async (req, res) => {
   const { symptoms } = req.body;
 
@@ -11,54 +11,85 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    // Send symptoms to DeepSeek LLM with enhanced prompt
-    const prompt = `You are a medical assistant helping with symptom triage. Analyze these symptoms carefully:
+    // Enhanced prompt for more accurate assessment
+    const prompt = `You are an AI medical assistant trained to provide preliminary symptom assessments. 
+    Analyze these symptoms carefully and provide a structured response:
 
-"${symptoms}"
+    "${symptoms}"
 
-Respond with the following format:
-1. Start with "Based on the symptoms described, "
-2. Provide a clear, simple explanation of the most likely possible condition(s).
-3. Include a line that explicitly states "Severity: [Mild/Moderate/Severe]"
-4. Recommend whether the user should book an appointment or monitor symptoms at home.
-5. If appropriate, include 2-3 bullet points with self-care tips.
+    Follow these specific guidelines:
+    1. Start with "Based on the symptoms described, "
+    2. Provide a concise explanation of the most likely possible condition(s).
+    3. Explicitly state the severity level as "Severity: [Mild/Moderate/Severe]" 
+       - Use Mild for non-urgent conditions that can be managed at home
+       - Use Moderate for conditions requiring medical attention within days
+       - Use Severe for conditions requiring urgent medical attention within 24 hours
+    4. Clearly state whether the patient should seek medical attention.
+    5. If appropriate, include 2-3 bullet points with self-care tips.
 
-Keep your response concise but informative.`;
+    Maintain a professional but compassionate tone. Ensure your response is conservative - when in doubt about severity, err on the side of caution.`;
 
-    console.log("Sending request to Ollama with DeepSeek model...");
+    console.log("Sending request to DeepSeek model...");
     const llmResponse = await deepSeekQuery(prompt);
     console.log("Received response from DeepSeek model");
 
-    // Extract response
+    // Extract response and determine severity
     const explanation = llmResponse.trim();
-
-    // Determine severity & booking suggestion
-    let recommendBooking = false;
+    
+    // Enhanced severity detection with regex
     let severity = "Mild"; // Default
-
-    if (explanation.toLowerCase().includes("severity: severe") || 
-        explanation.toLowerCase().includes("severe")) {
+    const severityMatch = explanation.match(/severity:\s*(mild|moderate|severe)/i);
+    
+    if (severityMatch) {
+      severity = severityMatch[1].charAt(0).toUpperCase() + severityMatch[1].slice(1).toLowerCase();
+    } else if (explanation.toLowerCase().includes("severe")) {
       severity = "Severe";
-      recommendBooking = true;
-    } else if (explanation.toLowerCase().includes("severity: moderate") || 
-               explanation.toLowerCase().includes("moderate")) {
+    } else if (explanation.toLowerCase().includes("moderate")) {
       severity = "Moderate";
-      // Recommend booking for moderate cases too
-      recommendBooking = true;
     }
-
-    // Also check for explicit booking recommendations
-    if (explanation.toLowerCase().includes("book an appointment") || 
-        explanation.toLowerCase().includes("see a doctor") ||
-        explanation.toLowerCase().includes("medical attention")) {
+    
+    // Determine if booking is recommended based on severity and content
+    let recommendBooking = false;
+    
+    if (severity === "Severe") {
       recommendBooking = true;
+    } else if (severity === "Moderate") {
+      recommendBooking = true;
+    } else {
+      // Check for specific phrases indicating medical attention is needed
+      const needAttentionPhrases = [
+        "see a doctor", 
+        "medical attention", 
+        "consult", 
+        "seek help",
+        "appointment", 
+        "healthcare provider",
+        "specialist"
+      ];
+      
+      recommendBooking = needAttentionPhrases.some(phrase => 
+        explanation.toLowerCase().includes(phrase)
+      );
     }
-
-    res.json({ 
-      explanation, 
-      recommendBooking,
-      severity 
-    });
+    
+    // Ensure correct severity classification is in the response text
+    if (!explanation.includes(`Severity: ${severity}`)) {
+      const updatedExplanation = explanation.replace(
+        /Severity:\s*(mild|moderate|severe)/i,
+        `Severity: ${severity}`
+      );
+      res.json({ 
+        explanation: updatedExplanation || explanation, 
+        recommendBooking,
+        severity 
+      });
+    } else {
+      res.json({ 
+        explanation, 
+        recommendBooking,
+        severity 
+      });
+    }
   } catch (error) {
     console.error("Error processing triage:", error);
     res.status(500).json({ 

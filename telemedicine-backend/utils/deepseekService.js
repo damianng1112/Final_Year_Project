@@ -2,7 +2,7 @@ const axios = require("axios");
 
 const deepSeekQuery = async (prompt) => {
   try {
-    const response = await axios.post("http://localhost:11434/api/generate", {
+    const response = await axios.post("http://ollama:11434/api/generate", {
       model: "deepseek-r1:1.5b", // Using the DeepSeek model
       prompt: prompt,
       stream: false

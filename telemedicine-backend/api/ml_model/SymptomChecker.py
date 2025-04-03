@@ -6,11 +6,11 @@ from flask_cors import CORS
 
 # Load the trained model
 model = joblib.load("diseaseModel.pkl")
-symptom_descriptions = pd.read_csv('../datasets/symptom_Description.csv', index_col='Disease')
-symptom_precautions = pd.read_csv('../datasets/symptom_precaution.csv', index_col='Disease')
+symptom_descriptions = pd.read_csv('./datasets/symptom_Description.csv', index_col='Disease')
+symptom_precautions = pd.read_csv('./datasets/symptom_precaution.csv', index_col='Disease')
 
 # Load symptom severities
-severity_df = pd.read_csv('../datasets/Symptom-severity.csv')
+severity_df = pd.read_csv('./datasets/Symptom-severity.csv')
 severity = dict(zip(severity_df['Symptom'], severity_df['weight']))
 
 all_symptoms = list(severity.keys())
