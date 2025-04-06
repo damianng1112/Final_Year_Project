@@ -107,6 +107,14 @@ const DoctorDashboard = ({ user, appointments }) => {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-gray-800">Doctor's Dashboard</h2>
       <div className="mb-4">
+      <div className="mb-4">
+        <Link
+          to="/schedule-management"
+          className="inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+        >
+          Manage Schedule
+        </Link>
+      </div>
         <h3 className="text-lg font-medium mb-2">Upcoming Appointments</h3>
         {appointments.length > 0 ? (
           <div className="space-y-2">
@@ -145,10 +153,10 @@ const PatientDashboard = ({ user, appointments }) => {
       
       <div className="space-y-4">
         <Link
-          to="/book-appointment"
+          to="/triage"
           className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
-          Book New Appointment
+          Triage for Appointment
         </Link>
 
         <div>
