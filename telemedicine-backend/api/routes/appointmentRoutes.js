@@ -3,6 +3,7 @@ const router = express.Router();
 const { generateTimeSlots } = require("./helpers");
 const Appointment = require("../../models/Appointment");
 const User = require("../../models/User");
+const authMiddleware = require('../../middleware/auth');
 
 // GET appointments for a given user (doctor or patient)
 router.get("/:userId", async (req, res) => {

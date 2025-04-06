@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import io from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,23 +34,23 @@ const Chat = ({ appointmentId }) => {
         }
 
         // Fetch current user data
-        const userResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/user/${userId}`);
+        const userResponse = await api.get(`/api/users/user/${userId}`);
         setUser(userResponse.data);
 
         // Fetch appointment details to get the other user
-        const appointmentResponse = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/appointments/detail/${appointmentId}`
+        const appointmentResponse = await api.get(
+          `/api/appointments/detail/${appointmentId}`
         );
         
         const appointment = appointmentResponse.data;
         const otherUserId = appointment.doctor._id === userId ? appointment.patient._id : appointment.doctor._id;
         
         // Fetch other user's data
-        const otherUserResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/user/${otherUserId}`);
+        const otherUserResponse = await api.get(`/api/users/user/${otherUserId}`);
         setOtherUser(otherUserResponse.data);
 
         // Fetch previous messages
-        const messagesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/messages/${appointmentId}`);
+        const messagesResponse = await api.get(`/api/messages/${appointmentId}`);
         setMessages(messagesResponse.data);
       } catch (err) {
         console.error('Error setting up chat:', err);
@@ -105,7 +105,7 @@ const Chat = ({ appointmentId }) => {
       };
 
       // Save message to backend
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/messages`, messageData);
+      const response = await api.post(`/api/messages`, messageData);
       const savedMessage = response.data;
 
       // Add sender name and details for UI display

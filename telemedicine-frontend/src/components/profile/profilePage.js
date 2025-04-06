@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api';
 import ProfileSidebar from './profileSideBar';
 import ProfileView from './profileView';
 import ProfileUpdate from './profileUpdate';
@@ -17,7 +17,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/user/${userId}`);
+        const response = await api.get(`/api/users/user/${userId}`);
         setUserProfile(response.data);
       } catch (err) {
         setError("Error fetching profile");

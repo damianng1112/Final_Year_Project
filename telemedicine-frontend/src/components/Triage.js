@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 
 const TriageAssessment = () => {
   const [doctors, setDoctors] = useState([]);
@@ -26,8 +26,8 @@ const TriageAssessment = () => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/users/doctors`
+        const response = await api.get(
+          `/api/users/doctors`
         );
         setDoctors(response.data);
         
@@ -75,8 +75,8 @@ const TriageAssessment = () => {
       addMessage("bot", "Let me check when the doctor is available...");
       
       // Call the API to get available dates in the next 14 days
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/availability/${selectedDoctor}/range`,
+      const response = await api.get(
+        `/api/availability/${selectedDoctor}/range`,
         {
           params: {
             startDate: new Date().toISOString().split('T')[0],
@@ -111,8 +111,8 @@ const TriageAssessment = () => {
   const fetchTimeSlots = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/availability/${selectedDoctor}?date=${selectedDate}`
+      const response = await api.get(
+        `/api/availability/${selectedDoctor}?date=${selectedDate}`
       );
       
       setTimeSlots(response.data.availableSlots || []);
@@ -166,10 +166,8 @@ const TriageAssessment = () => {
       addMessage("bot", "Thank you for sharing your symptoms. I'm analyzing them now...");
       
       // Call the triage API
-      const triageRes = await fetch(`${process.env.REACT_APP_API_URL}/api/triage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptoms: currentInput }),
+      const triageRes = await api.post("/api/triage", { 
+        symptoms: currentInput 
       });
       
       const triageData = await triageRes.json();
@@ -219,8 +217,8 @@ const TriageAssessment = () => {
     setLoading(true);
     
     try {
-      await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/appointments/book-appointment`,
+      await api.post(
+        `/api/appointments/book-appointment`,
         {
           doctorId: selectedDoctor,
           date: selectedDate,

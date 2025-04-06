@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); 
 const router = express.Router();
 const User = require('../../models/User');
+const authMiddleware = require('../../middleware/auth');
 
 // Signup route
 router.post('/signup', async (req, res) => {
@@ -69,7 +70,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Fetch user by ID
-router.get('/user/:id', async (req, res) => {
+router.get('/user/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
     const user = await User.findById(id).select('-password'); // Exclude password field
@@ -84,7 +85,7 @@ router.get('/user/:id', async (req, res) => {
 });
 
 // GET all patients
-router.get("/patients", async (req, res) => {
+router.get("/patients", authMiddleware, async (req, res) => {
   try {
     const patients = await User.find({ role: 'patient'}).select('-password');
     res.json(patients);
@@ -94,7 +95,7 @@ router.get("/patients", async (req, res) => {
 });
 
 // Get all doctors
-router.get('/doctors', async (req, res) => {
+router.get('/doctors', authMiddleware, async (req, res) => {
   try {
     const doctors = await User.find({ role: 'doctor' }).select('-password');
     res.json(doctors);
@@ -104,7 +105,7 @@ router.get('/doctors', async (req, res) => {
 });
 
 // GET all user
-router.get("/user", async (req, res) => {
+router.get("/user", authMiddleware, async (req, res) => {
   try {
     const user = await User.find().select('-password');
     res.json(user);
@@ -114,7 +115,7 @@ router.get("/user", async (req, res) => {
 });
 
 // UPDATE a user 
-router.put("/user/:id", async (req, res) => {
+router.put("/user/:id", authMiddleware, async (req, res) => {
   try {
     const updates = req.body; 
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password");
@@ -126,7 +127,7 @@ router.put("/user/:id", async (req, res) => {
 });
 
 // DELETE a user
-router.delete("/user/:id", async (req, res) => {
+router.delete("/user/:id", authMiddleware, async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });

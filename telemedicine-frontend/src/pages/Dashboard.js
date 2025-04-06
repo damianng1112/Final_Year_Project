@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { FaUserCircle } from 'react-icons/fa'; 
@@ -23,7 +23,7 @@ const Dashboard = () => {
 
       try {
         // Fetch user data
-        const userResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/user/${userId}`);
+        const userResponse = await api.get(`/api/users/user/${userId}`);
         setUser(userResponse.data);
       } catch (err) {
         handleFetchError(err);
@@ -39,7 +39,7 @@ const Dashboard = () => {
     const fetchAppointments = async () => {
       if (!user) return;
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/appointments/${user._id}`);
+        const response = await api.get(`/api/appointments/${user._id}`);
         
         // Filter out past appointments
         const currentDate = new Date();

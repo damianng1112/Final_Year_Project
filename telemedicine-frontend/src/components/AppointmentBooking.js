@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../utils/api";
 
 const AppointmentBooking = () => {
   const [doctors, setDoctors] = useState([]);
@@ -22,9 +22,7 @@ const AppointmentBooking = () => {
     const fetchDoctors = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/users/doctors`
-        );
+        const response = await api.get(`/api/users/doctors`);
 
         if (response.data.length === 0) {
           setErrors((prev) => ({ ...prev, doctors: "No doctors available" }));
@@ -57,8 +55,8 @@ const AppointmentBooking = () => {
         setTimeSlots([]);
         setSelectedTime("");
         
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/availability/${selectedDoctor}?date=${date}`
+        const response = await api.get(
+          `/api/availability/${selectedDoctor}?date=${date}`
         );
 
         const { availableSlots, bookedSlots } = response.data;
@@ -120,13 +118,13 @@ const AppointmentBooking = () => {
         return;
       }
       
-      await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/appointments/book-appointment`,
+      await api.post(
+        `/api/appointments/book-appointment`,
         {
           doctorId: selectedDoctor,
           date,
           time: selectedTime,
-          patientId: userId,
+          patientId: localStorage.getItem("userId"),
         }
       );
 

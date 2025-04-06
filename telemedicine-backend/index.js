@@ -49,10 +49,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/users', userRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/availability', availabilityRoutes);
-app.use("/api/triage", triageRoutes);
+app.use('/api/appointments', authMiddleware, appointmentRoutes);
+app.use('/api/messages', authMiddleware, messageRoutes);
+app.use('/api/availability', authMiddleware, availabilityRoutes);
+app.use("/api/triage", authMiddleware, triageRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
