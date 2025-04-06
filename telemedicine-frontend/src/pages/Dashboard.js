@@ -40,7 +40,34 @@ const Dashboard = () => {
       if (!user) return;
       try {
         const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/appointments/${user._id}`);
-        setAppointments(response.data);
+        
+        // Filter out past appointments
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0); // Set to beginning of day for proper comparison
+        
+        const upcomingAppointments = response.data.filter(appointment => {
+          const appointmentDate = new Date(appointment.date);
+          appointmentDate.setHours(0, 0, 0, 0);
+          
+          // If appointment date is today, check the time
+          if (appointmentDate.getTime() === currentDate.getTime()) {
+            const currentTime = new Date();
+            const [startTime] = appointment.time.split(' - '); // Get the start time (assuming format "HH:MM - HH:MM")
+            const [hours, minutes] = startTime.split(':').map(Number);
+            
+            // Create a date object for the appointment time today
+            const appointmentTime = new Date();
+            appointmentTime.setHours(hours, minutes, 0, 0);
+            
+            // Keep if appointment time is in the future
+            return appointmentTime > currentTime;
+          }
+          
+          // Keep if appointment date is in the future
+          return appointmentDate > currentDate;
+        });
+        
+        setAppointments(upcomingAppointments);
       } catch (err) {
         console.error("Error fetching appointments:", err);
       }
@@ -106,7 +133,8 @@ const DoctorDashboard = ({ user, appointments }) => {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-gray-800">Doctor's Dashboard</h2>
-      <div className="mb-4">
+      
+      {/* Schedule Management Link */}
       <div className="mb-4">
         <Link
           to="/schedule-management"
@@ -115,6 +143,8 @@ const DoctorDashboard = ({ user, appointments }) => {
           Manage Schedule
         </Link>
       </div>
+      
+      <div className="mb-4">
         <h3 className="text-lg font-medium mb-2">Upcoming Appointments</h3>
         {appointments.length > 0 ? (
           <div className="space-y-2">
@@ -123,18 +153,20 @@ const DoctorDashboard = ({ user, appointments }) => {
                 <p>Patient: {appointment.patient.name}</p>
                 <p>Date: {new Date(appointment.date).toLocaleDateString()}</p>
                 <p>Time: {appointment.time}</p>
-                <Link
-                      to={`/chat/${appointment._id}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Message Patient
-                    </Link>
-                    <Link
-                      to={`/video-call/${appointment._id}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Start Video Call
-                    </Link>
+                <div className="mt-2 space-x-3">
+                  <Link
+                    to={`/chat/${appointment._id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Message Patient
+                  </Link>
+                  <Link
+                    to={`/video-call/${appointment._id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Start Video Call
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -152,15 +184,24 @@ const PatientDashboard = ({ user, appointments }) => {
       <h2 className="text-xl font-semibold text-gray-800">Patient's Dashboard</h2>
       
       <div className="space-y-4">
-        <Link
-          to="/triage"
-          className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Triage for Appointment
-        </Link>
+        <div className="flex space-x-3">
+          <Link
+            to="/book-appointment"
+            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Book New Appointment
+          </Link>
+          
+          <Link
+            to="/triage"
+            className="inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            AI Symptom Assessment
+          </Link>
+        </div>
 
         <div>
-          <h3 className="text-lg font-medium mb-2">Your Appointments</h3>
+          <h3 className="text-lg font-medium mb-2">Your Upcoming Appointments</h3>
           {appointments.length > 0 ? (
             <div className="space-y-2">
               {appointments.map(appointment => (

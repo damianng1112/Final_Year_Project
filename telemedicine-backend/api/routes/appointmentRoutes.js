@@ -132,4 +132,24 @@ router.delete("/appointment/:id", async (req, res) => {
   }
 });
 
+// Add this route to your appointmentRoutes.js file
+
+// GET detailed information about a specific appointment
+router.get("/detail/:id", async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id)
+      .populate("doctor", "name role")
+      .populate("patient", "name role");
+    
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+    
+    res.json(appointment);
+  } catch (err) {
+    console.error("Error fetching appointment details:", err);
+    res.status(500).json({ message: "Error fetching appointment details" });
+  }
+});
+
 module.exports = router;
