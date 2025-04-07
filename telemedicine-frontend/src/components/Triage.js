@@ -165,12 +165,12 @@ const TriageAssessment = () => {
     try {
       addMessage("bot", "Thank you for sharing your symptoms. I'm analyzing them now...");
       
-      // Call the triage API
+      // Call the triage API using our api utility
       const triageRes = await api.post("/api/triage", { 
         symptoms: currentInput 
       });
       
-      const triageData = await triageRes.json();
+      const triageData = triageRes.data;
       setAssessmentData(triageData);
       
       // Add the assessment to the conversation
