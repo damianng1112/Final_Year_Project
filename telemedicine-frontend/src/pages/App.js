@@ -10,6 +10,7 @@ import ProfilePage from '../components/profile/profilePage';
 import Logout from '../components/profile/logout';
 import TriageAssessment from '../components/Triage';
 import DoctorSchedulingPage from '../pages/DoctorSchedulingPage'
+import WebRTCDiagnostic from '../components/WebRTCDiagnostic'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/video-call" element={<VideoCall />} />
           <Route path="/chat/:appointmentId" element={<ChatWrapper />} />
           <Route path="/video-call/:appointmentId" element={<VideoCallWrapper />} />
+          <Route path="/webrtc-diagnostic" element={<WebRTCDiagnostic />} />
           <Route path="/triage" element={<TriageAssessment />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/schedule-management" element={<DoctorSchedulingPage />} />

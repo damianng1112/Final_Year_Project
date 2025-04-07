@@ -15,11 +15,20 @@ const VideoCall = ({ appointmentId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('Not connected');
+  const [roomJoined, setRoomJoined] = useState(false);
   
   const userVideo = useRef();
   const peersRef = useRef([]);
   const remoteVideoRef = useRef();
   const navigate = useNavigate();
+
+  // Enable detailed logging for debugging
+const enableDetailedLogging = true;
+
+  // Debug logging function
+  const logEvent = (event, data) => {
+    console.log(`[${new Date().toISOString()}] ${event}`, data);
+  };
 
   // Get appointment details and set up user information
   useEffect(() => {
@@ -103,15 +112,20 @@ const VideoCall = ({ appointmentId }) => {
 
     setupCall();
 
-    // Clean up on component unmount
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => {
-          track.stop();
-          console.log(`Stopped ${track.kind} track`);
-        });
-      }
-    };
+// Clean up on component unmount
+return () => {
+  if (stream) {
+    stream.getTracks().forEach(track => {
+      track.stop();
+      logEvent(`Stopped ${track.kind} track`, null);
+    });
+  }
+  
+  // Leave room if we've joined one
+  if (roomJoined && appointmentId) {
+    socket.emit('leave-room', appointmentId);
+  }
+};
   }, [appointmentId, navigate]);
 
   // Force video element redraw when stream changes
@@ -136,85 +150,132 @@ const VideoCall = ({ appointmentId }) => {
     }
   }, [stream]);
 
-  // Handle socket connection for video call
-  useEffect(() => {
-    if (!stream || !appointmentId) return;
+// Handle socket connection for video call
+useEffect(() => {
+  if (!stream || !appointmentId) return;
 
-    // Socket event handlers
-    const handleUserConnected = (userId) => {
-      console.log('User connected to room:', userId);
-      setConnectionStatus('User connected, establishing peer connection...');
-      
-      // Create a peer connection as the initiator
+  // Socket event handlers
+  const handleExistingUsers = (userIds) => {
+    logEvent('Existing users in room', userIds);
+    setConnectionStatus('Other users present in room, creating connections...');
+    
+    userIds.forEach(userId => {
+      // Create a peer connection for each existing user
       const peer = createPeer(userId, socket.id, stream);
       
       peersRef.current.push({
         peerID: userId,
         peer,
       });
+    });
+    
+    if (userIds.length > 0) {
+      setPeers(prevPeers => [
+        ...prevPeers, 
+        ...userIds.map(id => ({ id, peer: peersRef.current.find(p => p.peerID === id)?.peer }))
+      ]);
+    }
+    
+    // Signal that we're ready to connect
+    socket.emit('ready-to-connect', appointmentId);
+  };
 
-      setPeers(prevPeers => [...prevPeers, { id: userId, peer }]);
-    };
+  const handleUserConnected = (userId) => {
+    logEvent('User connected to room', userId);
+    setConnectionStatus('User connected, waiting for peer ready signal...');
+    // We don't immediately create a connection - wait for ready-to-connect signal
+  };
+  
+  const handlePeerReady = (userId) => {
+    logEvent('Peer is ready to connect', userId);
+    
+    // Now create a peer connection as the initiator
+    const peer = createPeer(userId, socket.id, stream);
+    
+    peersRef.current.push({
+      peerID: userId,
+      peer,
+    });
 
-    const handleUserDisconnected = (userId) => {
-      console.log('User disconnected:', userId);
-      setConnectionStatus('Other user disconnected');
+    setPeers(prevPeers => [...prevPeers, { id: userId, peer }]);
+  };
+
+  const handleUserDisconnected = (userId) => {
+    logEvent('User disconnected', userId);
+    setConnectionStatus('Other user disconnected');
+    
+    // Find and destroy the peer connection
+    const peerObj = peersRef.current.find(p => p.peerID === userId);
+    if (peerObj) {
+      peerObj.peer.destroy();
+    }
+
+    // Remove the peer from the list
+    peersRef.current = peersRef.current.filter(p => p.peerID !== userId);
+    setPeers(prevPeers => prevPeers.filter(p => p.id !== userId));
+    
+    if (callActive) {
+      setCallActive(false);
+    }
+  };
+
+  const handleReceiveSignal = (payload) => {
+    logEvent('Received signal', payload.id);
+    
+    // Check if we already have a peer connection with this user
+    const item = peersRef.current.find(p => p.peerID === payload.id);
+    
+    if (item) {
+      // If we have a connection, pass the signal to the peer
+      logEvent('Passing signal to existing peer', payload.id);
+      item.peer.signal(payload.signal);
+    } else {
+      // If we don't have a connection yet, create one as the receiver
+      logEvent('Creating new peer as receiver', payload.id);
+      setConnectionStatus('Receiving call connection...');
+      const peer = addPeer(payload.signal, payload.id, stream);
       
-      // Find and destroy the peer connection
-      const peerObj = peersRef.current.find(p => p.peerID === userId);
-      if (peerObj) {
-        peerObj.peer.destroy();
-      }
+      peersRef.current.push({
+        peerID: payload.id,
+        peer,
+      });
 
-      // Remove the peer from the list
-      peersRef.current = peersRef.current.filter(p => p.peerID !== userId);
-      setPeers(prevPeers => prevPeers.filter(p => p.id !== userId));
-      
-      if (callActive) {
-        setCallActive(false);
-      }
-    };
+      setPeers(prevPeers => [...prevPeers, { id: payload.id, peer }]);
+    }
+  };
 
-    const handleReceiveSignal = (payload) => {
-      console.log('Received signal:', payload.id);
-      
-      // Check if we already have a peer connection with this user
-      const item = peersRef.current.find(p => p.peerID === payload.id);
-      
-      if (item) {
-        // If we have a connection, pass the signal to the peer
-        item.peer.signal(payload.signal);
-      } else {
-        // If we don't have a connection yet, create one as the receiver
-        setConnectionStatus('Receiving call connection...');
-        const peer = addPeer(payload.signal, payload.id, stream);
-        
-        peersRef.current.push({
-          peerID: payload.id,
-          peer,
-        });
+  // Join the room with appointmentId
+  logEvent('Joining room', appointmentId);
+  socket.emit('join-room', appointmentId);
+  setRoomJoined(true);
 
-        setPeers(prevPeers => [...prevPeers, { id: payload.id, peer }]);
-      }
-    };
+  // Set up event listeners
+  socket.on('existing-users', handleExistingUsers);
+  socket.on('user-connected', handleUserConnected);
+  socket.on('peer-ready', handlePeerReady);
+  socket.on('user-disconnected', handleUserDisconnected);
+  socket.on('signal', handleReceiveSignal);
 
-    // Join the room with appointmentId
-    console.log('Joining room:', appointmentId);
-    socket.emit('join-room', appointmentId);
+  // Signal that we're ready to connect after a short delay
+  // This ensures the join-room event is processed first
+  setTimeout(() => {
+    socket.emit('ready-to-connect', appointmentId);
+  }, 1000);
 
-    // Set up event listeners
-    socket.on('user-connected', handleUserConnected);
-    socket.on('user-disconnected', handleUserDisconnected);
-    socket.on('signal', handleReceiveSignal);
-
-    // Clean up on unmount or when dependencies change
-    return () => {
-      socket.off('user-connected', handleUserConnected);
-      socket.off('user-disconnected', handleUserDisconnected);
-      socket.off('signal', handleReceiveSignal);
+  // Clean up on unmount or when dependencies change
+  return () => {
+    socket.off('existing-users', handleExistingUsers);
+    socket.off('user-connected', handleUserConnected);
+    socket.off('peer-ready', handlePeerReady);
+    socket.off('user-disconnected', handleUserDisconnected);
+    socket.off('signal', handleReceiveSignal);
+    
+    if (roomJoined) {
       socket.emit('leave-room', appointmentId);
-    };
-  }, [stream, appointmentId]);
+      setRoomJoined(false);
+    }
+  };
+}, [stream, appointmentId]);
 
   // Function to create a peer connection as the initiator
   const createPeer = (userToSignal, callerID, stream) => {
@@ -300,11 +361,13 @@ const VideoCall = ({ appointmentId }) => {
 
     return peer;
   };
-
+  
   const startCall = () => {
     setCallActive(true);
     setConnectionStatus('Call active, waiting for other participant...');
-    // The actual connection is handled by the peer connection
+    
+    // Re-emit ready-to-connect to make sure peers are established
+    socket.emit('ready-to-connect', appointmentId);
   };
 
   const endCall = () => {
