@@ -1,0 +1,146 @@
+/* theme.css - Theme CSS variables and classes */
+
+:root {
+  /* Default light theme variables */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F3F4F6;
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --border-color: #E5E7EB;
+  --card-bg: #FFFFFF;
+  --card-border: #E5E7EB;
+  --accent-color: #3B82F6;
+  --accent-hover: #2563EB;
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
+  --error-color: #EF4444;
+  
+  /* Animation properties */
+  --transition-speed: 0.3s;
+}
+
+/* Dark theme class that overrides variables */
+.theme-dark {
+  --bg-primary: #1F2937;
+  --bg-secondary: #111827;
+  --text-primary: #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --border-color: #4B5563;
+  --card-bg: #1F2937;
+  --card-border: #374151;
+  --accent-color: #60A5FA;
+  --accent-hover: #3B82F6;
+}
+
+/* Apply theme variables to common elements */
+body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-speed) ease-in-out, 
+              color var(--transition-speed) ease-in-out;
+}
+
+/* Card backgrounds */
+.bg-white, 
+div[class*="bg-white"],
+.shadow-lg,
+.shadow-md,
+.card {
+  background-color: var(--card-bg) !important;
+  border-color: var(--card-border) !important;
+  color: var(--text-primary) !important;
+  transition: background-color var(--transition-speed) ease-in-out, 
+              border-color var(--transition-speed) ease-in-out,
+              color var(--transition-speed) ease-in-out;
+}
+
+/* Text colors */
+h1, h2, h3, h4, h5, h6,
+.text-gray-800, 
+.text-gray-900,
+.font-medium,
+.font-bold,
+.font-semibold {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-500,
+.text-gray-600, 
+.text-gray-700 {
+  color: var(--text-secondary) !important;
+}
+
+/* Border colors */
+.border,
+[class*="border-gray"] {
+  border-color: var(--border-color) !important;
+}
+
+/* Force all backgrounds */
+.max-w-6xl,
+.max-w-3xl,
+.max-w-2xl,
+.max-w-xl,
+.max-w-lg,
+.max-w-md,
+.rounded-lg,
+.shadow {
+  background-color: var(--card-bg) !important;
+}
+
+/* Input styles */
+input, 
+select, 
+textarea,
+.border {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  transition: background-color var(--transition-speed) ease-in-out;
+  border: none;
+}
+
+.theme-toggle:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Style for status messages */
+.status-message {
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.status-success {
+  background-color: #DEF7EC;
+  color: #046C4E;
+}
+
+.status-warning {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.status-error {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+}

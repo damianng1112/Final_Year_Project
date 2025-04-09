@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import DoctorAvailabilityManager from '../components/DoctorAvailabilityManager';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -29,7 +29,7 @@ const DoctorSchedulingPage = () => {
           return;
         }
 
-        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/user/${userId}`);
+        const response = await api.get(`/api/users/user/${userId}`);
         const userData = response.data;
         
         if (userData.role !== 'doctor') {
@@ -52,8 +52,8 @@ const DoctorSchedulingPage = () => {
   const fetchSpecificDates = async (doctorId) => {
     try {
       // This would fetch specific dates where the doctor has custom availability set
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/availability/specific-dates/${doctorId}`
+      const response = await api.get(
+        `/api/availability/specific-dates/${doctorId}`
       );
       setSpecificDates(response.data.dates || []);
     } catch (err) {
@@ -65,8 +65,8 @@ const DoctorSchedulingPage = () => {
     setSelectedDate(date);
     try {
       // Fetch the details for this specific date
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/availability/date-details/${userProfile._id}?date=${date}`
+      const response = await api.get(
+        `/api/availability/date-details/${userProfile._id}?date=${date}`
       );
       
       const { startTime, endTime, slotDuration } = response.data;
@@ -100,8 +100,8 @@ const DoctorSchedulingPage = () => {
     }
     
     try {
-      await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/availability/set-availability`,
+      await api.post(
+        `/api/availability/set-availability`,
         {
           doctorId: userProfile._id,
           date: selectedDate,

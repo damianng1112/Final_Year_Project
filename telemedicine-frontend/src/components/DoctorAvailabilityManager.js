@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 
 const DoctorAvailabilityManager = ({ userProfile }) => {
   const [loading, setLoading] = useState(false);
@@ -27,8 +27,8 @@ const DoctorAvailabilityManager = ({ userProfile }) => {
   const fetchRecurringSchedule = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/availability/recurAvailability/${userProfile._id}`
+      const response = await api.get(
+        `/api/availability/recurAvailability/${userProfile._id}`
       );
       
       if (response.data.recurringAvailability && response.data.recurringAvailability.length > 0) {
@@ -92,14 +92,14 @@ const DoctorAvailabilityManager = ({ userProfile }) => {
 
         if (day._id) {
           // Update existing
-          return axios.put(
-            `${process.env.REACT_APP_API_URL}/api/availability/${userProfile._id}/${day._id}`,
+          return api.put(
+            `/api/availability/${userProfile._id}/${day._id}`,
             scheduleData
           );
         } else {
           // Create new
-          return axios.post(
-            `${process.env.REACT_APP_API_URL}/api/availability/set-recurring`,
+          return api.post(
+            `/api/availability/set-recurring`,
             {
               doctorId: userProfile._id,
               ...scheduleData
@@ -134,8 +134,8 @@ const DoctorAvailabilityManager = ({ userProfile }) => {
       }
 
       // Call the backend to generate availability for the next month
-      await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/availability/generate-monthly`,
+      await api.post(
+        `/api/availability/generate-monthly`,
         {
           doctorId: userProfile._id
         }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, useParams } from 'react-router-dom';
 import Login from './Login';
 import Signup from './Signup';
@@ -11,8 +11,28 @@ import Logout from '../components/profile/logout';
 import TriageAssessment from '../components/Triage';
 import DoctorSchedulingPage from '../pages/DoctorSchedulingPage'
 import WebRTCDiagnostic from '../components/WebRTCDiagnostic'
+import '../utils/theme.css';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
+import { initializeTheme, setupThemeListener } from '../utils/theme';
+import { checkScheduledNotifications } from '../utils/notification';
+import ThemeToggle from '../components/ThemeToggle';
 
 function App() {
+  useEffect(() => {
+    // Initialize theme
+    initializeTheme();
+    
+    // Set up theme listener
+    const cleanup = setupThemeListener();
+    
+    // Check for scheduled notifications
+    checkScheduledNotifications();
+    
+    return () => {
+      cleanup();
+    };
+  }, []);
   return (
     <Router>
       <div>
@@ -30,6 +50,19 @@ function App() {
           <Route path="/schedule-management" element={<DoctorSchedulingPage />} />
           <Route path="/logout" element={<Logout />} />
         </Routes>
+        <ThemeToggle />
+        <ToastContainer 
+          position="bottom-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
       </div>
     </Router>
   );
